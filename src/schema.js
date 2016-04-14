@@ -14,6 +14,28 @@ const signatureType = new GraphQLObjectType({
   }
 });
 
+const treeEntryType = new GraphQLObjectType({
+  name: 'TreeEntry',
+  fields: {
+    sha: { type: GraphQLString },
+    path: { type: GraphQLString },
+  }
+});
+
+const treeType = new GraphQLObjectType({
+  name: 'Tree',
+  fields: {
+    id: { type: GraphQLString },
+    path: { type: GraphQLString },
+    entries: {
+      type: new GraphQLList(treeEntryType),
+      resolve(tree) {
+        return tree.entries();
+      }
+    },
+  },
+});
+
 const commitType = new GraphQLObjectType({
   name: 'Commit',
   fields() {
@@ -34,6 +56,12 @@ const commitType = new GraphQLObjectType({
           return commit.getParents();
         },
       },
+      tree: {
+        type: treeType,
+        resolve(commit) {
+          return commit.getTree();
+        }
+      }
     };
   },
 });
