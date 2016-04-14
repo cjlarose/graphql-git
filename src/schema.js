@@ -5,6 +5,14 @@ import { GraphQLSchema,
 
 const REPO_DIR = process.env['REPO_DIR'] || console.error('Missing REPO_DIR env var') || process.exit(1);
 
+const signatureType = new GraphQLObjectType({
+  name: 'Signature',
+  fields: {
+    name: { type: GraphQLString },
+    email: { type: GraphQLString },
+  }
+});
+
 const commitType = new GraphQLObjectType({
   name: 'Commit',
   fields: {
@@ -14,6 +22,10 @@ const commitType = new GraphQLObjectType({
         return commit.date().toISOString();
       },
     },
+    message: { type: GraphQLString },
+    summary: { type: GraphQLString },
+    author: { type: signatureType },
+    committer: { type: signatureType },
   },
 });
 
