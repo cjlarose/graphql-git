@@ -17,10 +17,37 @@ const commitType = new GraphQLObjectType({
   },
 });
 
+const referenceType = new GraphQLObjectType({
+  name: 'Reference',
+  fields: {
+    name: {
+      type: GraphQLString,
+      resolve(reference) {
+        return reference.toString();
+      },
+    },
+    commit: {
+      type: commitType,
+      resolve(reference) {
+        return reference.owner().getReferenceCommit(reference);
+      },
+    },
+  },
+});
+
 const repoType = new GraphQLObjectType({
   name: 'Repository',
   fields: {
     path: { type: GraphQLString },
+    branch: {
+      type: referenceType,
+      args: {
+        name: { type: GraphQLString },
+      },
+      resolve(repo, args) {
+        return repo.getBranch(args.name);
+      },
+    },
     commit: {
       type: commitType,
       args: {
@@ -37,7 +64,7 @@ export default new GraphQLSchema({
   query: new GraphQLObjectType({
     name: 'Query',
     fields: {
-      repository: {
+      self: {
         type: repoType,
         resolve() {
           return Git.Repository.open(REPO_DIR);
