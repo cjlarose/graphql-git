@@ -1,6 +1,7 @@
 import Git from 'nodegit';
 import { GraphQLSchema,
          GraphQLString,
+         GraphQLList,
          GraphQLObjectType } from 'graphql';
 
 const REPO_DIR = process.env['REPO_DIR'] || console.error('Missing REPO_DIR env var') || process.exit(1);
@@ -15,17 +16,25 @@ const signatureType = new GraphQLObjectType({
 
 const commitType = new GraphQLObjectType({
   name: 'Commit',
-  fields: {
-    date: {
-      type: GraphQLString,
-      resolve(commit) {
-        return commit.date().toISOString();
+  fields() {
+    return {
+      date: {
+        type: GraphQLString,
+        resolve(commit) {
+          return commit.date().toISOString();
+        },
       },
-    },
-    message: { type: GraphQLString },
-    summary: { type: GraphQLString },
-    author: { type: signatureType },
-    committer: { type: signatureType },
+      message: { type: GraphQLString },
+      summary: { type: GraphQLString },
+      author: { type: signatureType },
+      committer: { type: signatureType },
+      parents: {
+        type: new GraphQLList(commitType),
+        resolve(commit) {
+          return commit.getParents();
+        },
+      },
+    };
   },
 });
 
