@@ -13,10 +13,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.13.4",
-    "express-graphql": "^0.5.1",
-    "graphql": "^0.5.0",
-    "nodegit": "^0.12.2"
+    "express": "^4.14.1",
+    "express-graphql": "^0.6.3",
+    "graphql": "^0.9.1",
+    "nodegit": "0.16.0"
   },
   "devDependencies": {
     "babel-cli": "^6.7.5",
