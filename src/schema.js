@@ -2,9 +2,28 @@ import Git from 'nodegit';
 import { GraphQLSchema,
          GraphQLString,
          GraphQLList,
+         GraphQLInterfaceType,
          GraphQLObjectType } from 'graphql';
 
 const REPO_DIR = process.env['REPO_DIR'] || console.error('Missing REPO_DIR env var') || process.exit(1);
+
+const objectType = new GraphQLInterfaceType({
+  name: 'Object',
+  fields: {
+    oid: { type: GraphQLString },
+  },
+  resolveType(obj) {
+    switch (obj.constructor) {
+      // TODO blob, tag
+      case Git.Commit:
+        return commitType;
+      case Git.Tree:
+        return treeType;
+      default:
+        throw new Error('Unknown object');
+    }
+  },
+});
 
 const signatureType = new GraphQLObjectType({
   name: 'Signature',
@@ -24,7 +43,14 @@ const treeEntryType = new GraphQLObjectType({
 
 const treeType = new GraphQLObjectType({
   name: 'Tree',
+  interfaces: [objectType],
   fields: {
+    oid: {
+      type: GraphQLString,
+      resolve(tree) {
+        return tree.id();
+      },
+    },
     id: { type: GraphQLString },
     path: { type: GraphQLString },
     entries: {
@@ -38,8 +64,15 @@ const treeType = new GraphQLObjectType({
 
 const commitType = new GraphQLObjectType({
   name: 'Commit',
+  interfaces: [objectType],
   fields() {
     return {
+      oid: {
+        type: GraphQLString,
+        resolve(commit) {
+          return commit.id();
+        },
+      },
       date: {
         type: GraphQLString,
         resolve(commit) {
@@ -66,6 +99,20 @@ const commitType = new GraphQLObjectType({
   },
 });
 
+function resolveOid(repo, oid) {
+  return Git.Object.lookup(repo, oid, Git.Object.TYPE.ANY).then((obj) => {
+    switch (obj.type()) {
+      // TODO: BLOB, TAG
+      case Git.Object.TYPE.COMMIT:
+        return repo.getCommit(oid);
+      case Git.Object.TYPE.TREE:
+        return repo.getTree(oid);
+      default:
+        throw new Error(`Unexpected object type ${obj.type()}`);
+    }
+  });
+}
+
 const referenceType = new GraphQLObjectType({
   name: 'Reference',
   fields: {
@@ -75,10 +122,12 @@ const referenceType = new GraphQLObjectType({
         return reference.toString();
       },
     },
-    commit: {
-      type: commitType,
+    target: {
+      type: objectType,
       resolve(reference) {
-        return reference.owner().getReferenceCommit(reference);
+        const repo = reference.owner();
+        const oid = reference.target();
+        return resolveOid(repo, oid);
       },
     },
   },
@@ -88,13 +137,13 @@ const repoType = new GraphQLObjectType({
   name: 'Repository',
   fields: {
     path: { type: GraphQLString },
-    branch: {
+    reference: {
       type: referenceType,
       args: {
         name: { type: GraphQLString },
       },
       resolve(repo, args) {
-        return repo.getBranch(args.name);
+        return repo.getReference(args.name);
       },
     },
     commit: {
