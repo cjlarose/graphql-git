@@ -51,7 +51,6 @@ const treeType = new GraphQLObjectType({
         return tree.id();
       },
     },
-    id: { type: GraphQLString },
     path: { type: GraphQLString },
     entries: {
       type: new GraphQLList(treeEntryType),
