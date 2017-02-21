@@ -118,17 +118,19 @@ const repoType = new GraphQLObjectType({
       resolve(repo, { reachableFrom, notReachableFrom, firstParent }) {
         // TODO: Paginate response
         const revwalk = Git.Revwalk.create(repo);
-        reachableFrom.forEach((oid) => {
-          revwalk.push(oid);
-        });
-        notReachableFrom.forEach((oid) => {
-          revwalk.hide(oid);
-        });
         if (firstParent) {
           revwalk.simplifyFirstParent();
         }
 
-        return revwalk.getCommitsUntil(() => true);
+        const revparse = committish => Git.Revparse.single(repo, committish).then(obj => obj.id());
+        const reachableFromPromise = Promise.all(reachableFrom.map(revparse));
+        const notReachableFromPromise = Promise.all(notReachableFrom.map(revparse));
+        return Promise.all([reachableFromPromise, notReachableFromPromise])
+          .then(([reachableFromOids, notReachableFromOids]) => {
+            reachableFromOids.forEach(oid => revwalk.push(oid));
+            notReachableFromOids.forEach(oid => revwalk.hide(oid));
+          })
+         .then(() => revwalk.getCommitsUntil(() => true));
       },
     },
   },
