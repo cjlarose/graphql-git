@@ -1,5 +1,6 @@
 const Git = require('nodegit');
 const { GraphQLString,
+        GraphQLBoolean,
         GraphQLList,
         GraphQLInterfaceType,
         GraphQLObjectType } = require('graphql');
@@ -149,6 +150,38 @@ const repoType = new GraphQLObjectType({
       },
       resolve(repo, args) {
         return repo.getCommit(args.oid);
+      },
+    },
+    revwalk: {
+      type: new GraphQLList(commitType),
+      args: {
+        reachableFrom: {
+          type: new GraphQLList(GraphQLString),
+          defaultValue: [],
+        },
+        notReachableFrom: {
+          type: new GraphQLList(GraphQLString),
+          defaultValue: [],
+        },
+        firstParent: {
+          type: GraphQLBoolean,
+          defaultValue: false,
+        },
+      },
+      resolve(repo, { reachableFrom, notReachableFrom, firstParent }) {
+        // TODO: Paginate response
+        const revwalk = Git.Revwalk.create(repo);
+        reachableFrom.forEach((oid) => {
+          revwalk.push(oid);
+        });
+        notReachableFrom.forEach((oid) => {
+          revwalk.hide(oid);
+        });
+        if (firstParent) {
+          revwalk.simplifyFirstParent();
+        }
+
+        return revwalk.getCommitsUntil(() => true);
       },
     },
   },
