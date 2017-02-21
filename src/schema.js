@@ -1,11 +1,8 @@
 import Git from 'nodegit';
-import { GraphQLSchema,
-         GraphQLString,
+import { GraphQLString,
          GraphQLList,
          GraphQLInterfaceType,
          GraphQLObjectType } from 'graphql';
-
-const REPO_DIR = process.env['REPO_DIR'] || console.error('Missing REPO_DIR env var') || process.exit(1);
 
 const objectType = new GraphQLInterfaceType({
   name: 'Object',
@@ -157,16 +154,4 @@ const repoType = new GraphQLObjectType({
   },
 });
 
-export default new GraphQLSchema({
-  query: new GraphQLObjectType({
-    name: 'Query',
-    fields: {
-      self: {
-        type: repoType,
-        resolve() {
-          return Git.Repository.open(REPO_DIR);
-        },
-      },
-    },
-  }),
-});
+export default repoType;
