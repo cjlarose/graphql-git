@@ -1,8 +1,8 @@
-import Git from 'nodegit';
-import { GraphQLString,
-         GraphQLList,
-         GraphQLInterfaceType,
-         GraphQLObjectType } from 'graphql';
+const Git = require('nodegit');
+const { GraphQLString,
+        GraphQLList,
+        GraphQLInterfaceType,
+        GraphQLObjectType } = require('graphql');
 
 const objectType = new GraphQLInterfaceType({
   name: 'Object',
@@ -154,4 +154,4 @@ const repoType = new GraphQLObjectType({
   },
 });
 
-export default repoType;
+module.exports = repoType;
