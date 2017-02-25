@@ -99,7 +99,7 @@ const repoType = new GraphQLObjectType({
         return repo.getReference(args.name);
       },
     },
-    revwalk: {
+    log: {
       type: new GraphQLList(commitType),
       args: {
         reachableFrom: {
